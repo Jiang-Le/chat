@@ -1,38 +1,42 @@
+import streamlit as st
 import openai
-import streamlit as st 
 
-def show_messages(text):
-    messages_str =[
-        f"{_['role']}: {_['content']}" for _ in st.session_state["messages"][1:]
-    ] 
+def add_textbox(key, content):
+    st.text_input(key, content)
 
-    text.text_area("Messages", value=str("\n\n".join(messages_str)), height=400)
+def add_text_area(key, content):
+    st.markdown(content)
+
+if 'num_textboxes' not in st.session_state:
+    st.session_state.num_textboxes = 0
+
+if 'context' not in st.session_state:
+    st.session_state.context = []
 
 BASE_PROMPT = [{"role": "system", "content": "You are a helpful assistant."}]
 
 if "messages" not in st.session_state:
     st.session_state["messages"] = BASE_PROMPT
 
-st.subheader("ChatGPT @ IEG Growth Platform Data Science") 
-
 openai.api_key = st.text_input("Paste your OpenAI API Key here", value="", type="password")
 
-prompt = st.text_input("Prompt", value="Enter your message here...")
+prompt = st.text_input("Prompt")
 
-if st.button("Send"):
+if st.button('Send'):
+    st.markdown('---')
+    st.session_state.num_textboxes += 1
     with st.spinner("Generating response..."):
         st.session_state["messages"] += [{"role": "user", "content": prompt}]
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",messages=st.session_state["messages"]
         )
         message_response = response["choices"][0]["message"]["content"]
-        st.session_state["messages"] += [
-            {"role": "system", "content": message_response} 
-        ]
+        st.session_state.context.append({
+            "user_prompt": prompt,
+            "answer": message_response
+        })
 
-if st.button("Clear"):
-    st.session_state["messages"]= BASE_PROMPT
-
-text = st.empty()
-
-show_messages(text) 
+for i in range(st.session_state.num_textboxes):
+    context = st.session_state.context[i]
+    add_textbox(f"Question{i}", context["user_prompt"])
+    add_text_area(f"Answer{i}", context["answer"])
