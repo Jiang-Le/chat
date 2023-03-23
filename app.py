@@ -46,6 +46,7 @@ if st.button('Send'):
             "user_prompt": prompt,
             "answer": message_response
         })
+        messages += [{"role": "system", "content": message_response}]
         st.session_state["messages"] = messages
         
         st.session_state.num_textboxes += 1
